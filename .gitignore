@@ -1,0 +1,64 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C compilation & build artifacts
+build/
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+
+# Python setuptools & distribution
+python/build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing & QA
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
+# Database runtime files & snapshots
+*.wal
+*.wal.tmp
+*.wal.lock
+*.snap
+*.snap.tmp
+*.snap.tmp.*
+*.db
+*.db-journal
+
+# Fuzzing artifacts & crash dumps
+fuzz_parser
+fuzz_wal
+crash-*
+leak-*
+timeout-*
+oom-*
+
+# Debug & core dumps
+core
+core.*
+vgcore.*
+*.dSYM/
+
+# IDE & OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary doc scratch folders
+docs/v2/
+docs/v3/
+
+

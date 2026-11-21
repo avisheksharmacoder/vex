@@ -1,0 +1,140 @@
+name: Vex CI & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  c-sanitizers:
+    name: C11 Sanitizers & SLA Gate
+    runs-on: ubuntu-latest
+    env:
+      ASAN_OPTIONS: "detect_leaks=1:halt_on_error=1:abort_on_error=1"
+      UBSAN_OPTIONS: "print_stacktrace=1:halt_on_error=1"
+      TSAN_OPTIONS: "halt_on_error=1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ASan + UBSan suite (M1-M9)
+        run: |
+          make test-mem test-m2-mem test-m3-mem test-m4-mem \
+               test-m5-mem test-m7-mem test-m8-mem test-m9-mem
+
+      - name: TSan race suite (M1-M9)
+        run: |
+          make test-race test-m2-race test-m3-race test-m4-race \
+               test-m5-race test-m7-race test-m8-race test-m9-race
+
+      - name: Release throughput & latency SLAs
+        run: |
+          make bench bench-m2 bench-m3 bench-m4 bench-m5 bench-m8 bench-m9
+
+  fuzz-smoke:
+    name: libFuzzer Smoke (Parser + WAL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Clang
+        run: sudo apt-get update && sudo apt-get install -y clang
+
+      - name: Fuzz parser and WAL decoder
+        run: make fuzz-parser fuzz-wal
+
+  python-tests:
+    name: Python ${{ matrix.python-version }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dev dependencies
+        run: python -m pip install --upgrade pip setuptools wheel pytest numpy
+
+      - name: Build native C11 extension
+        run: make build-py PYTHON=python
+
+      - name: Run full pytest suite (M6, M7, M9)
+        run: |
+          PYTHONPATH=python python -m pytest -v \
+            tests/test_m6_python.py \
+            tests/test_m7_p0.py \
+            tests/test_m9_release.py
+
+  wheels:
+    name: Build Portable Wheels (${{ matrix.os }})
+    needs: [c-sanitizers, python-tests]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stage self-contained wheel build context
+        run: |
+          mkdir -p wheel-src/python
+          cp -r src include tests wheel-src/
+          cp python/pyproject.toml python/setup.py python/vex_py.c \
+             python/vex.pyi python/py.typed wheel-src/
+          cp python/vex.pyi python/py.typed wheel-src/python/
+          python3 -c '
+          from pathlib import Path
+          p = Path("wheel-src/setup.py")
+          p.write_text(p.read_text().replace("../src/", "src/").replace("../include", "include"))
+          '
+
+      - name: Build & verify portable wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2.22
+        with:
+          package-dir: wheel-src
+          output-dir: wheelhouse
+        env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+          CIBW_SKIP: "*-manylinux_i686 *-musllinux_*"
+          CIBW_TEST_REQUIRES: "pytest numpy"
+          CIBW_TEST_COMMAND: >-
+            pytest -v
+            {project}/tests/test_m6_python.py
+            {project}/tests/test_m7_p0.py
+            {project}/tests/test_m9_release.py
+            -k "not flock_rejection"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  release:
+    name: Publish to PyPI
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [wheels, fuzz-smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+
