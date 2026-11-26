@@ -49,6 +49,16 @@ with vex.open("app.wal", workers=4, fsync=True) as db:
 
 ---
 
+## VQL Studio
+
+Launch the interactive browser or desktop studio (`make gui-web` or `make gui`) to write syntax-highlighted VQL, inspect live engine metrics and `VXWAL001` binary headers, and browse the built-in language reference:
+
+![Vex VQL Studio showing VQL editor, live engine metrics, WAL hex inspector, and query output](images/Vex%20studio.png)
+
+![Built-in Vex Query Language Reference inside VQL Studio](images/vex%20studio%20docs.png)
+
+---
+
 ## The 6-Keyword Query Language
 
 Start with a table name, filter/slice/lookup with `[...]`, pick columns as bare names, aggregate with `{...}`, and flow strictly left-to-right.
