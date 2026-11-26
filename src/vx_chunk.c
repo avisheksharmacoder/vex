@@ -1,10 +1,10 @@
-#include "vx_chunk.h"
+#include "../include/vx_chunk.h"
 
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "vx_simd.h"
+#include "../include/vx_simd.h"
 
 #define VX_COL_ALIGN 64U
 

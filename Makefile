@@ -178,13 +178,22 @@ test-m10-race: $(BUILD_DIR) $(OBJ_AVX2_RACE)
 test-m10-py: build-py
 	PYTHONPATH=python $(PYTHON) -m pytest -v tests/test_m10_audit.py
 
-.PHONY: repl test-cli bench-py bench-single-core
+.PHONY: repl test-cli gui gui-web test-gui bench-py bench-single-core
 
 repl: build-py
 	PYTHONPATH=python $(PYTHON) python/vex_cli.py $(WAL)
 
 test-cli: build-py
 	PYTHONPATH=python $(PYTHON) -m pytest -v tests/test_cli.py
+
+gui: build-py
+	PYTHONPATH=python $(PYTHON) python/vex_gui.py
+
+gui-web: build-py
+	PYTHONPATH=python $(PYTHON) -m vex.web_studio
+
+test-gui: build-py
+	PYTHONPATH=python $(PYTHON) -m pytest -v tests/test_gui.py
 
 bench-py: build-py
 	PYTHONPATH=python $(PYTHON) bench/bench_vs_sqlite.py

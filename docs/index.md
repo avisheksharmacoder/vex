@@ -12,6 +12,9 @@ Welcome to the comprehensive technical documentation for **Vex**, a high-perform
 | **[Vex Query Language (VQL) Reference](file:///home/avisheks/Documents/dibs/vex/docs/query_language.md)** | Complete guide to the 6-keyword Pythonic query language, left-to-right pipelined syntax, joins, aggregations, safety guards, and point mutations. |
 | **[Python Nativeness & Zero-Copy Interop](file:///home/avisheks/Documents/dibs/vex/docs/python_nativeness.md)** | Detailed breakdown of the C-extension architecture, PEP 3118 buffer protocol, GIL-free query execution, NumPy zero-copy views, and lifetime pinning. |
 | **[Technical Nuances & Engineering Decisions](file:///home/avisheks/Documents/dibs/vex/docs/technical_nuances.md)** | In-depth analysis of low-level systems engineering decisions: false sharing prevention, Robin Hood PSL invariants, EBR slot recycling, crash safety semantics, and SIMD dispatch. |
+| **[Testing & Verification Policy (No Multi-GB Runs)](file:///home/avisheks/Documents/dibs/vex/docs/testing_policy.md)** | Strict engineering mandate prohibiting multi-gigabyte benchmarks/stress tests and defining budget-shrinking validation rules. |
+| **[AI Agent Codebase Guide](file:///home/avisheks/Documents/dibs/vex/aidocs/README.md)** | Fast-orientation docs for AI agents: active V1 vs standalone V2 architecture, module map, build/sanitizer commands, and verified current status. |
+| **[V2 Engine Architecture & Implementation Tracker](file:///home/avisheks/Documents/dibs/vex/docs/v2-engine/README.md)** | Central tracker, critical path dependency graph, specifications, and verification gates for V2 Engine milestones (M11–M18). |
 
 ---
 

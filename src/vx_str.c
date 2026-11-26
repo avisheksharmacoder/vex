@@ -1,4 +1,4 @@
-#include "vx_str.h"
+#include "../include/vx_str.h"
 
 #include <stddef.h>
 #include <string.h>

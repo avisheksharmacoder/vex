@@ -8,20 +8,28 @@ build/
 *.o
 *.obj
 *.so
+*.pyd
 *.dylib
 *.dll
 *.a
 *.lib
 
-# Python setuptools & distribution
+# Python virtualenvs, setuptools & distribution
+.venv/
+venv/
 python/build/
 dist/
 *.egg-info/
 .eggs/
+*.whl
+wheelhouse/
+wheel-src/
 
 # Testing & QA
 .pytest_cache/
 .hypothesis/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 
@@ -34,6 +42,14 @@ htmlcov/
 *.snap.tmp.*
 *.db
 *.db-journal
+*.vx
+*.vx.tmp
+*.del
+*.del.tmp
+*.idx
+*.idx.tmp
+MANIFEST
+MANIFEST.tmp
 
 # Fuzzing artifacts & crash dumps
 fuzz_parser
@@ -56,6 +72,9 @@ vgcore.*
 *.swo
 *~
 .DS_Store
+
+# Benchmark outputs
+bench/*.json
 
 # Temporary doc scratch folders
 docs/v2/

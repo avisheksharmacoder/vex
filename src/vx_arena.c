@@ -1,4 +1,4 @@
-#include "vx_arena.h"
+#include "../include/vx_arena.h"
 
 #include <stdlib.h>
 #include <string.h>

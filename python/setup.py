@@ -44,7 +44,7 @@ class PortableSIMDBuildExt(build_ext):
 
 
 ext = Extension(
-    name="vex",
+    name="vex._vex",
     sources=C_SOURCES,
     include_dirs=["../include"],
     extra_compile_args=[
@@ -61,6 +61,9 @@ ext = Extension(
 setup(
     name="vexdb",
     version="1.0.0",
+    packages=["vex"],
+    package_dir={"": "."},
+    package_data={"vex": ["py.typed", "__init__.pyi", "static/*"]},
     ext_modules=[ext],
     cmdclass={"build_ext": PortableSIMDBuildExt},
 )

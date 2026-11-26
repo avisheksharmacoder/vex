@@ -2,7 +2,7 @@
 #define VX_INTERNAL_H
 
 #include "vx_ast.h"
-#include "vx_chunk.h"
+#include "../include/vx_chunk.h"
 #include "vx_db.h"
 #include "vx_delmap.h"
 #include "vx_ebr.h"

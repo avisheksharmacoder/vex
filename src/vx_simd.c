@@ -1,4 +1,4 @@
-#include "vx_simd.h"
+#include "../include/vx_simd.h"
 
 #include <pthread.h>
 #include <stdatomic.h>

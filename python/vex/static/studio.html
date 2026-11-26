@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vex VQL Studio</title>
+  <link rel="stylesheet" href="/static/studio.css" />
+</head>
+<body>
+  <header class="app-bar">
+    <div class="brand">
+      <span class="brand-badge">VEX</span>
+      <div class="brand-text">
+        <h1>VQL Studio</h1>
+        <span class="brand-sub">In-Process C11 Columnar Engine</span>
+      </div>
+      <span class="chip chip-tonal" id="simd-chip">SIMD: …</span>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="btn btn-primary" id="btn-run" title="Run script or selected text (Ctrl+Enter)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        <span id="run-label">Run</span>
+        <kbd>Ctrl+↵</kbd>
+      </button>
+      <button class="btn btn-tonal" id="btn-checkpoint" title="Flush & compact WAL to atomic .snap">
+        Checkpoint (.snap)
+      </button>
+      <button class="btn btn-outlined" id="btn-reset" title="Discard current temp DB and create a fresh one">
+        New Temp DB
+      </button>
+
+      <label class="select-wrap" for="snippet-select">
+        <span>Snippet</span>
+        <select id="snippet-select"></select>
+      </label>
+
+      <button class="btn btn-icon" id="btn-theme" title="Toggle Dark / Light theme" aria-label="Toggle theme">
+        <span id="theme-icon">☀</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace" id="workspace">
+    <!-- Pane 1: Temporary DB Inspector & Metrics -->
+    <section class="pane pane-left" id="pane-left">
+      <div class="pane-header">
+        <div class="pane-title">
+          <span class="pane-step">1</span>
+          <h2>Temporary DB &amp; Metrics</h2>
+        </div>
+        <div class="pane-header-actions">
+          <button class="btn btn-text" id="btn-refresh" title="Refresh files and stats">Refresh</button>
+          <button
+            class="btn btn-icon pane-collapse-btn"
+            id="btn-toggle-left"
+            type="button"
+            aria-expanded="true"
+            aria-controls="pane-left"
+            aria-label="Minimize Temporary DB & Metrics pane"
+            title="Minimize Temporary DB & Metrics pane"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 18 9.5 12l6-6 1.4 1.4-4.6 4.6 4.6 4.6zM6 5h2v14H6z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="pane-body left-body">
+        <div class="card db-path-card">
+          <div class="card-label">Active Temporary Session</div>
+          <code class="db-path" id="db-path">…</code>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-label">Temporary DB Files</span>
+            <span class="muted-meta" id="disk-total">0 B</span>
+          </div>
+          <div class="file-list" id="file-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-label">Engine Metrics</span>
+            <span class="muted-meta" id="rss-chip">RSS: …</span>
+          </div>
+          <div class="metrics-grid" id="metrics-grid"></div>
+        </div>
+
+        <div class="card hex-card">
+          <div class="card-head">
+            <span class="card-label">Binary Inspector</span>
+            <span class="muted-meta" id="hex-filename">session.wal</span>
+          </div>
+          <pre class="hex-preview" id="hex-preview">Loading…</pre>
+        </div>
+      </div>
+    </section>
+
+    <div class="splitter" id="splitter-left" data-splitter="left" role="separator" aria-orientation="vertical"></div>
+
+    <!-- Pane 2: VQL Syntax-Highlighted Editor -->
+    <section class="pane pane-center" id="pane-center">
+      <div class="pane-header">
+        <div class="pane-title">
+          <span class="pane-step">2</span>
+          <h2>VQL Editor</h2>
+        </div>
+        <div class="pane-header-right">
+          <div class="font-controls" role="group" aria-label="Editor font size">
+            <button class="btn btn-mini" id="btn-font-dec" type="button" title="Decrease editor font size">A-</button>
+            <span class="font-size-label" id="font-size-label">13px</span>
+            <button class="btn btn-mini" id="btn-font-inc" type="button" title="Increase editor font size">A+</button>
+          </div>
+          <span class="legend">
+            <i class="lg-kw">kw</i>
+            <i class="lg-tp">type</i>
+            <i class="lg-agg">agg</i>
+            <i class="lg-str">str</i>
+            <i class="lg-num">num</i>
+          </span>
+          <button class="btn btn-text" id="btn-clear">Clear</button>
+        </div>
+      </div>
+
+      <div class="editor-shell">
+        <div class="gutter" id="editor-gutter" aria-hidden="true">1</div>
+        <div class="editor-stage">
+          <pre class="highlight-layer" id="highlight-layer" aria-hidden="true"><code id="highlight-code"></code></pre>
+          <textarea
+            id="vql-editor"
+            class="vql-textarea"
+            spellcheck="false"
+            autocomplete="off"
+            autocapitalize="off"
+            wrap="off"
+            aria-label="VQL query editor"
+          ></textarea>
+        </div>
+      </div>
+
+      <footer class="pane-footer">
+        <span id="cursor-pos">Ln 1, Col 1</span>
+        <span>Tip: Select text to run a single query • <code>Tab</code> inserts 4 spaces</span>
+      </footer>
+    </section>
+
+    <div class="splitter" id="splitter-right" data-splitter="right" role="separator" aria-orientation="vertical"></div>
+
+    <!-- Pane 3: Output Viewer (Table / Dictionary / List) -->
+    <section class="pane pane-right" id="pane-right">
+      <div class="pane-header">
+        <div class="pane-title">
+          <span class="pane-step">3</span>
+          <h2>Output</h2>
+        </div>
+        <div class="pane-header-actions">
+          <div class="segmented" role="tablist" aria-label="Output format">
+            <button class="seg-btn active" data-mode="table" role="tab" aria-selected="true">Table</button>
+            <button class="seg-btn" data-mode="dict" role="tab" aria-selected="false">Dictionary</button>
+            <button class="seg-btn" data-mode="list" role="tab" aria-selected="false">List</button>
+          </div>
+          <button
+            class="btn btn-icon pane-collapse-btn"
+            id="btn-toggle-right"
+            type="button"
+            aria-expanded="true"
+            aria-controls="pane-right"
+            aria-label="Minimize Output pane"
+            title="Minimize Output pane"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6 14.5 12l-6 6-1.4-1.4 4.6-4.6-4.6-4.6zM16 5h2v14h-2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="output-subbar">
+        <span class="muted-meta" id="result-summary">Ready</span>
+        <button class="btn btn-text" id="btn-copy">Copy Output</button>
+      </div>
+
+      <div class="output-viewport" id="output-viewport">
+        <div class="empty-state" id="empty-state">Press <strong>Run</strong> (<code>Ctrl+Enter</code>) to execute VQL.</div>
+      </div>
+
+      <div class="trace-drawer" id="trace-drawer">
+        <div class="trace-head">
+          <span class="card-label">Execution Log &amp; Plan</span>
+          <span class="status-pill" id="exec-status-pill">Idle</span>
+        </div>
+        <pre class="trace-log" id="trace-log">Ready.</pre>
+      </div>
+    </section>
+  </main>
+
+  <!-- Floating Docs FAB (Bottom Right) -->
+  <button
+    class="docs-fab"
+    id="btn-docs-fab"
+    type="button"
+    title="VQL Language Documentation (6 Keywords)"
+    aria-label="Open VQL Documentation"
+    aria-haspopup="dialog"
+    aria-expanded="false"
+    aria-controls="docs-dialog"
+  >
+    <svg class="docs-fab-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6.5a2.5 2.5 0 0 0-2.5 2.5V5.5zm2.5-.5A.5.5 0 0 0 6 5.5V18a4.5 4.5 0 0 1 1.5-.26H18V5H6.5zM9 8h6v1.6H9V8zm0 3.2h6v1.6H9v-1.6z"/>
+    </svg>
+  </button>
+
+  <!-- Floating VQL Documentation Dialog -->
+  <div class="docs-backdrop" id="docs-backdrop" hidden>
+    <section
+      class="docs-dialog"
+      id="docs-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="docs-title"
+    >
+      <header class="docs-header">
+        <div class="docs-title-wrap">
+          <span class="docs-badge">VQL Docs</span>
+          <div>
+            <h2 id="docs-title">Vex Query Language Reference</h2>
+            <p class="docs-subtitle">6 core keywords · left-to-right analytical pipelines</p>
+          </div>
+        </div>
+        <div class="docs-header-actions">
+          <button class="btn btn-outlined btn-compact" id="btn-docs-expand-all" type="button">Expand all</button>
+          <button class="btn btn-icon docs-close" id="btn-docs-close" type="button" title="Close documentation (Esc)" aria-label="Close documentation">✕</button>
+        </div>
+      </header>
+
+      <div class="docs-body">
+        <div class="docs-accordion" id="docs-accordion"></div>
+
+        <footer class="docs-cheatsheet">
+          <span class="cheatsheet-title">Operators &amp; Scalar Types</span>
+          <div class="cheatsheet-pills">
+            <span><code>+=</code> insert</span>
+            <span><code>|=</code> upsert</span>
+            <span><code>[pk] =</code> update</span>
+            <span><code>&amp;</code> inner join</span>
+            <span><code>+</code> left join</span>
+            <span><code>++</code> full join</span>
+            <span><code>[:N]</code> slice</span>
+            <span><code>?</code> explain</span>
+            <span><code>i64 u64 f64 bool str</code></span>
+          </div>
+        </footer>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/studio.js"></script>
+</body>
+</html>
+
